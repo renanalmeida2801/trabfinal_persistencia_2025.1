@@ -6,7 +6,7 @@ from pathlib import Path
 def setup_logger():
     """Configura o logger da aplicação"""
 
-    log_dir = Path(__file__).parent.parent.parent / "logs"
+    log_dir = Path(__file__).parent.parent / "logs"
     log_dir.mkdir(exist_ok=True)
     log_file = log_dir / "enem_api.log"
 

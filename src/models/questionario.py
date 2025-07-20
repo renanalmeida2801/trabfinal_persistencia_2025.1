@@ -14,7 +14,6 @@ class QuestionarioSocioeconomico(BaseModel):
         None, description="Até que série sua mãe ou responsável estudou?"
     )
 
-    # Perguntas sobre ocupação
     Q003: Optional[str] = Field(
         None,
         description="A partir da apresentação de algumas ocupações, qual o nível de escolaridade mais próximo do seu pai?",
@@ -24,7 +23,6 @@ class QuestionarioSocioeconomico(BaseModel):
         description="A partir da apresentação de algumas ocupações, qual o nível de escolaridade mais próximo do sua mãe?",
     )
 
-    # Perguntas sobre renda
     Q005: Optional[str] = Field(
         None, description="Incluindo você, quantas pessoas moram na sua residência?"
     )
@@ -32,7 +30,6 @@ class QuestionarioSocioeconomico(BaseModel):
         None, description="Qual é aproximadamente a renda total de sua família?"
     )
 
-    # Perguntas sobre bens da família
     Q007: Optional[str] = Field(
         None, description="Na sua residência trabalha empregado(a) doméstico(a)?"
     )

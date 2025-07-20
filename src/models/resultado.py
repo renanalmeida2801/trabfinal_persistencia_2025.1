@@ -9,7 +9,6 @@ class Resultado(MongoBaseModel):
     nu_sequencial: str = Field(..., description="Número sequencial único")
     nu_ano: int = Field(..., description="Ano da prova")
 
-    # Referências para outras entidades
     participante_inscricao: str = Field(
         ..., description="Número de inscrição do participante"
     )
@@ -19,7 +18,6 @@ class Resultado(MongoBaseModel):
     escola_codigo: Optional[int] = Field(None, description="Código da escola")
     escola_id: Optional[PyObjectId] = Field(None, description="Referência à escola")
 
-    # Localização da escola
     municipio_escola_codigo: Optional[int] = Field(
         None, description="Código do município da escola"
     )
@@ -29,7 +27,6 @@ class Resultado(MongoBaseModel):
     uf_escola_codigo: Optional[int] = Field(None, description="Código da UF da escola")
     uf_escola_sigla: Optional[str] = Field(None, description="Sigla da UF da escola")
 
-    # Informações da escola
     dependencia_administrativa: Optional[int] = Field(
         None, description="Dependência administrativa da escola"
     )
@@ -38,13 +35,11 @@ class Resultado(MongoBaseModel):
         None, description="Situação de funcionamento da escola"
     )
 
-    # Localização da prova
     municipio_prova_codigo: int = Field(..., description="Código do município da prova")
     municipio_prova_nome: str = Field(..., description="Nome do município da prova")
     uf_prova_codigo: int = Field(..., description="Código da UF da prova")
     uf_prova_sigla: str = Field(..., description="Sigla da UF da prova")
 
-    # Presença nas provas
     presenca_cn: Optional[int] = Field(
         None, description="Presença em Ciências da Natureza"
     )

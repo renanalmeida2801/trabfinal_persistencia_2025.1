@@ -1,9 +1,8 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import Field
 
 from .base import MongoBaseModel, PyObjectId
-from .questionario import QuestionarioSocioeconomico
 
 
 class Participante(MongoBaseModel):
@@ -21,19 +20,16 @@ class Participante(MongoBaseModel):
     ensino: Optional[int] = Field(None, description="Tipo de ensino médio")
     treineiro: bool = Field(False, description="Se é treineiro")
 
-    # Localização da prova
     municipio_prova_codigo: int = Field(..., description="Código do município da prova")
     municipio_prova_id: Optional[PyObjectId] = Field(
         None, description="Referência ao município da prova"
     )
     uf_prova: str = Field(..., description="UF onde fez a prova")
 
-    # Questionário socioeconômico
-    questionario: Optional[QuestionarioSocioeconomico] = Field(
+    questionario: Optional[Dict[str, Any]] = Field(
         None, description="Respostas do questionário socioeconômico"
     )
 
-    # Estatísticas calculadas
     total_provas_realizadas: Optional[int] = Field(
         0, description="Total de provas que o participante realizou"
     )
