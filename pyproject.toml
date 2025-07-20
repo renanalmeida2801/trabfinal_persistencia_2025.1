@@ -1,0 +1,17 @@
+[project]
+name = "trabfinal-persistencia-2025-1"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "bson>=0.5.10",
+    "fastapi>=0.116.1",
+    "motor>=3.3.0",
+    "pandas>=2.3.1",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "pymongo>=4.13.2",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.35.0",
+]
