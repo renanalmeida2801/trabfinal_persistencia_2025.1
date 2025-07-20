@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 class QuestionarioSocioeconomico(BaseModel):
     """Questionário socioeconômico do ENEM"""
 
-    # Perguntas sobre escolaridade dos pais
     Q001: Optional[str] = Field(
         None, description="Até que série seu pai ou responsável estudou?"
     )
