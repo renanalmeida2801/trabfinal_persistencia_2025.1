@@ -4,23 +4,25 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from infra.repositories.participante_repository import ParticipanteRepository
 from infra.settings.database import get_database
+from services.participante_service import ParticipanteService
 
 router = APIRouter(prefix="/participantes", tags=["Participantes"])
 
 
-async def get_participante_repository():
-    """Dependency injection para ParticipanteRepository"""
+async def get_participante_service():
+    """Dependency injection para ParticipanteService"""
     db = await get_database()
-    return ParticipanteRepository(db)
+    participante_repo = ParticipanteRepository(db)
+    return ParticipanteService(participante_repo)
 
 
 @router.get("/{participante_id}", response_model=Dict[str, Any])
 async def obter_participante(
     participante_id: str,
-    repo: ParticipanteRepository = Depends(get_participante_repository),
+    service: ParticipanteService = Depends(get_participante_service),
 ):
     """Obter participante por ID"""
-    participante = await repo.find_by_id(participante_id)
+    participante = await service.obter_participante_por_id(participante_id)
     if not participante:
         raise HTTPException(status_code=404, detail="Participante não encontrado")
     return participante
@@ -29,10 +31,10 @@ async def obter_participante(
 @router.get("/inscricao/{nu_inscricao}", response_model=Dict[str, Any])
 async def obter_participante_por_inscricao(
     nu_inscricao: str,
-    repo: ParticipanteRepository = Depends(get_participante_repository),
+    service: ParticipanteService = Depends(get_participante_service),
 ):
     """Obter participante por número de inscrição"""
-    participante = await repo.find_by_inscricao(nu_inscricao)
+    participante = await service.obter_participante_por_inscricao(nu_inscricao)
     if not participante:
         raise HTTPException(status_code=404, detail="Participante não encontrado")
     return participante
@@ -44,54 +46,52 @@ async def listar_participantes(
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
     ano: Optional[int] = Query(None, description="Filtrar por ano"),
     sexo: Optional[str] = Query(None, description="Filtrar por sexo (M/F)"),
-    treineiro: Optional[bool] = Query(None, description="Filtrar por treineiros"),
-    uf_prova: Optional[str] = Query(None, description="Filtrar por UF da prova"),
-    repo: ParticipanteRepository = Depends(get_participante_repository),
+    uf_residencia: Optional[str] = Query(
+        None, description="Filtrar por UF de residência"
+    ),
+    municipio_residencia: Optional[str] = Query(
+        None, description="Filtrar por município de residência"
+    ),
+    escola_codigo: Optional[int] = Query(
+        None, description="Filtrar por código da escola"
+    ),
+    idade_min: Optional[int] = Query(None, description="Idade mínima"),
+    idade_max: Optional[int] = Query(None, description="Idade máxima"),
+    service: ParticipanteService = Depends(get_participante_service),
 ):
     """Listar participantes com filtros e paginação"""
-    filter_dict = {}
-    if ano:
-        filter_dict["nu_ano"] = ano
-    if sexo:
-        filter_dict["sexo"] = sexo
-    if treineiro is not None:
-        filter_dict["treineiro"] = treineiro
-    if uf_prova:
-        filter_dict["uf_prova"] = uf_prova
-
-    participantes = await repo.find_all(
-        skip=skip, limit=limit, filter_dict=filter_dict, sort_by="nu_inscricao"
+    return await service.listar_participantes(
+        skip=skip,
+        limit=limit,
+        ano=ano,
+        uf_residencia=uf_residencia,
+        municipio_residencia=municipio_residencia,
+        escola_codigo=escola_codigo,
+        sexo=sexo,
+        idade_min=idade_min,
+        idade_max=idade_max,
     )
-    total = await repo.count(filter_dict)
-
-    return {
-        "items": participantes,
-        "total": total,
-        "skip": skip,
-        "limit": limit,
-        "has_more": skip + limit < total,
-    }
 
 
-@router.get("/estatisticas/sexo", response_model=List[Dict[str, Any]])
-async def obter_estatisticas_sexo(
-    repo: ParticipanteRepository = Depends(get_participante_repository),
+@router.get("/estatisticas/demograficas", response_model=Dict[str, Any])
+async def obter_estatisticas_demograficas(
+    service: ParticipanteService = Depends(get_participante_service),
 ):
-    """Obter estatísticas por sexo"""
-    return await repo.get_estatisticas_por_sexo()
+    """Obter estatísticas demográficas dos participantes"""
+    return await service.obter_estatisticas_demograficas()
 
 
-@router.get("/estatisticas/faixa-etaria", response_model=List[Dict[str, Any]])
-async def obter_estatisticas_faixa_etaria(
-    repo: ParticipanteRepository = Depends(get_participante_repository),
+@router.get("/estatisticas/por-uf", response_model=List[Dict[str, Any]])
+async def obter_participantes_por_uf(
+    service: ParticipanteService = Depends(get_participante_service),
 ):
-    """Obter estatísticas por faixa etária"""
-    return await repo.get_estatisticas_por_faixa_etaria()
+    """Obter contagem de participantes por UF"""
+    return await service.obter_participantes_por_uf()
 
 
-@router.get("/estatisticas/cor-raca", response_model=List[Dict[str, Any]])
-async def obter_estatisticas_cor_raca(
-    repo: ParticipanteRepository = Depends(get_participante_repository),
+@router.get("/estatisticas/distribuicao-idade", response_model=List[Dict[str, Any]])
+async def obter_distribuicao_idade(
+    service: ParticipanteService = Depends(get_participante_service),
 ):
-    """Obter estatísticas por cor/raça"""
-    return await repo.get_estatisticas_por_cor_raca()
+    """Obter distribuição de idades dos participantes"""
+    return await service.obter_distribuicao_idade()
