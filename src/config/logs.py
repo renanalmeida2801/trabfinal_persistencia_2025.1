@@ -4,7 +4,26 @@ from pathlib import Path
 
 
 def setup_logger():
-    """Configura o logger da aplicação"""
+    """
+    Configura e retorna o logger da aplicação com handlers para console e arquivo.
+
+    Esta função configura um logger com as seguintes características:
+    - Logs são salvos em arquivo rotativo (enem_api.log)
+    - Logs também são exibidos no console
+    - Rotação automática quando arquivo atinge 10MB
+    - Mantém backup de até 5 arquivos antigos
+    - Formato padronizado com timestamp, nível, nome e mensagem
+
+    Args:
+        None
+
+    Returns:
+        logging.Logger: Logger configurado pronto para uso
+
+    Note:
+        O diretório de logs é criado automaticamente se não existir.
+        O logger é configurado apenas uma vez (singleton pattern).
+    """
 
     log_dir = Path(__file__).parent.parent / "logs"
     log_dir.mkdir(exist_ok=True)
