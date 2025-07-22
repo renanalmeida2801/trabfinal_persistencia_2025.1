@@ -2,8 +2,6 @@
 
 Sistema de API RESTful para exploração e manipulação de dados do ENEM (Exame Nacional do Ensino Médio) utilizando FastAPI e MongoDB.
 
-> **📌 Nota da Versão 1.0.0**: O carregamento automático de dados foi substituído por um endpoint administrativo (`/admin/load-data`) para melhor controle e performance.
-
 ## 📋 Descrição do Projeto
 
 Este projeto foi desenvolvido como Trabalho Prático Final da disciplina de Persistência de Dados, tendo como objetivo integrar conhecimentos de:
