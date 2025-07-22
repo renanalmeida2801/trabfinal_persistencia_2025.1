@@ -6,12 +6,12 @@ from config.logs import logger
 from infra.repositories.municipio_repository import MunicipioRepository
 from infra.settings.database import get_database
 from schemas.municipio_schemas import (
-    MunicipioCreate, 
-    MunicipioUpdate,
-    MunicipioSimples,
-    MunicipioPaginadoResponse,
+    EstatisticasRegiaoResponse,
+    MunicipioCreate,
     MunicipioOperationResponse,
-    EstatisticasRegiaoResponse
+    MunicipioPaginadoResponse,
+    MunicipioSimples,
+    MunicipioUpdate,
 )
 from services.municipio_service import MunicipioService
 
@@ -109,7 +109,11 @@ async def atualizar_municipio(
     if not updated:
         raise HTTPException(status_code=404, detail="Município não encontrado")
 
-    return {"success": True, "message": "Município atualizado com sucesso", "municipio_id": municipio_id}
+    return {
+        "success": True,
+        "message": "Município atualizado com sucesso",
+        "municipio_id": municipio_id,
+    }
 
 
 @router.delete("/{municipio_id}", response_model=MunicipioOperationResponse)
@@ -121,7 +125,11 @@ async def deletar_municipio(
     if not deleted:
         raise HTTPException(status_code=404, detail="Município não encontrado")
 
-    return {"success": True, "message": "Município deletado com sucesso", "municipio_id": municipio_id}
+    return {
+        "success": True,
+        "message": "Município deletado com sucesso",
+        "municipio_id": municipio_id,
+    }
 
 
 @router.get("/estatisticas/regiao", response_model=EstatisticasRegiaoResponse)
