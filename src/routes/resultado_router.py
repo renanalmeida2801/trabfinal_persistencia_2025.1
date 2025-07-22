@@ -12,8 +12,10 @@ from schemas.resultado_schemas import (
     ParticipantesDestaqueResponse,
     RankingUFResponse,
     ResultadoCreate,
+    ResultadoOperationResponse,
     ResultadoPaginadoResponse,
     ResultadoSimples,
+    ResultadoUpdate,
 )
 from services.resultado_service import ResultadoService
 
@@ -130,3 +132,43 @@ async def obter_estatisticas_periodo(
 ):
     """Obter estatísticas por período de tempo"""
     return await service.obter_estatisticas_por_periodo(data_inicio, data_fim)
+
+
+@router.put("/{resultado_id}", response_model=ResultadoOperationResponse)
+async def atualizar_resultado(
+    resultado_id: str,
+    resultado_update: ResultadoUpdate,
+    service: ResultadoService = Depends(get_resultado_service),
+):
+    """Atualizar resultado"""
+    # Remove campos None
+    update_data = {k: v for k, v in resultado_update.dict().items() if v is not None}
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
+
+    updated = await service.atualizar_resultado(resultado_id, update_data)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Resultado não encontrado")
+
+    return {
+        "success": True,
+        "message": "Resultado atualizado com sucesso",
+        "resultado_id": resultado_id,
+    }
+
+
+@router.delete("/{resultado_id}", response_model=ResultadoOperationResponse)
+async def deletar_resultado(
+    resultado_id: str, service: ResultadoService = Depends(get_resultado_service)
+):
+    """Deletar resultado"""
+    deleted = await service.deletar_resultado(resultado_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Resultado não encontrado")
+
+    return {
+        "success": True,
+        "message": "Resultado deletado com sucesso",
+        "resultado_id": resultado_id,
+    }
