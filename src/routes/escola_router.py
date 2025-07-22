@@ -7,6 +7,8 @@ from infra.repositories.escola_repository import EscolaRepository
 from infra.settings.database import get_database
 from schemas.escola_schemas import (
     EscolaCreate,
+    EscolaUpdate,
+    EscolaOperationResponse,
     EscolaSimples,
     EscolaPaginadaResponse,
     EscolasPorDependenciaResponse,
@@ -113,3 +115,55 @@ async def obter_ranking_escolas_por_desempenho(
 ):
     """Obter ranking das escolas por desempenho médio dos participantes"""
     return await service.obter_ranking_escolas_por_desempenho(limit)
+
+
+@router.put("/{escola_id}", response_model=EscolaOperationResponse)
+async def atualizar_escola(
+    escola_id: str,
+    escola_update: EscolaUpdate,
+    service: EscolaService = Depends(get_escola_service),
+):
+    """Atualizar escola"""
+    logger.info(f"Atualizando escola - ID: {escola_id}")
+    
+    update_data = {k: v for k, v in escola_update.dict().items() if v is not None}
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
+
+    try:
+        updated = await service.atualizar_escola(escola_id, update_data)
+        if not updated:
+            logger.warning(f"Escola não encontrada para atualização - ID: {escola_id}")
+            raise HTTPException(status_code=404, detail="Escola não encontrada")
+        
+        logger.info(f"Escola atualizada com sucesso - ID: {escola_id}")
+        return {"success": True, "message": "Escola atualizada com sucesso", "escola_id": escola_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao atualizar escola {escola_id}: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{escola_id}", response_model=EscolaOperationResponse)
+async def deletar_escola(
+    escola_id: str, 
+    service: EscolaService = Depends(get_escola_service)
+):
+    """Deletar escola"""
+    logger.info(f"Deletando escola - ID: {escola_id}")
+    
+    try:
+        deleted = await service.deletar_escola(escola_id)
+        if not deleted:
+            logger.warning(f"Escola não encontrada para exclusão - ID: {escola_id}")
+            raise HTTPException(status_code=404, detail="Escola não encontrada")
+        
+        logger.info(f"Escola deletada com sucesso - ID: {escola_id}")
+        return {"success": True, "message": "Escola deletada com sucesso", "escola_id": escola_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao deletar escola {escola_id}: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))

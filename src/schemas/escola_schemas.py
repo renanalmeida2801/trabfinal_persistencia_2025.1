@@ -16,6 +16,24 @@ class EscolaCreate(BaseModel):
     situacao_funcionamento: int
 
 
+class EscolaUpdate(BaseModel):
+    """Schema para atualização de escola"""
+    nome: Optional[str] = None
+    municipio_codigo: Optional[int] = None
+    uf_codigo: Optional[int] = None
+    uf_sigla: Optional[str] = None
+    dependencia_administrativa: Optional[int] = None
+    localizacao: Optional[int] = None
+    situacao_funcionamento: Optional[int] = None
+
+
+class EscolaOperationResponse(BaseModel):
+    """Resposta para operações de CRUD em escolas"""
+    success: bool = Field(..., description="Se a operação foi bem-sucedida")
+    message: Optional[str] = Field(None, description="Mensagem da operação")
+    escola_id: Optional[str] = Field(None, description="ID da escola afetada")
+
+
 class EscolaResponse(BaseModel):
     """Schema para resposta de escola"""
     id: str

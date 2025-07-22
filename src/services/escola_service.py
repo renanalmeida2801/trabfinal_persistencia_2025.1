@@ -411,3 +411,32 @@ class EscolaService:
             logger.error(f"Erro ao buscar escolas por nome '{nome}': {str(e)}")
             logger.error(traceback.format_exc())
             raise
+
+    async def deletar_escola(self, escola_id: str) -> bool:
+        """
+        Deletar uma escola.
+        
+        Args:
+            escola_id (str): ID da escola a ser deletada
+            
+        Returns:
+            bool: True se deletada com sucesso, False caso contrário
+            
+        Exceptions:
+            Exception: Quando ocorre erro na deleção
+        """
+        try:
+            logger.info(f"Deletando escola: {escola_id}")
+            deleted = await self.escola_repository.delete_by_id(escola_id)
+            
+            if deleted:
+                logger.info(f"Escola deletada com sucesso: {escola_id}")
+            else:
+                logger.warning(f"Escola não encontrada para deleção: {escola_id}")
+                
+            return deleted
+            
+        except Exception as e:
+            logger.error(f"Erro ao deletar escola {escola_id}: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise
