@@ -21,9 +21,13 @@ class BaseRepository(ABC):
 
     async def find_by_id(self, id: str) -> Optional[Dict[str, Any]]:
         """Buscar documento por ID"""
-        if not ObjectId.is_valid(id):
-            return None
-        return await self.collection.find_one({"_id": ObjectId(id)})
+        if ObjectId.is_valid(id):
+            result = await self.collection.find_one({"_id": ObjectId(id)})
+            if result:
+                return result
+        
+        result = await self.collection.find_one({"_id": id})
+        return result
 
     async def find_all(
         self,
@@ -50,21 +54,42 @@ class BaseRepository(ABC):
 
     async def update_by_id(self, id: str, update_dict: Dict[str, Any]) -> bool:
         """Atualizar documento por ID"""
-        if not ObjectId.is_valid(id):
-            return False
+        # Tentar primeiro como ObjectId
+        if ObjectId.is_valid(id):
+            result = await self.collection.update_one(
+                {"_id": ObjectId(id)}, {"$set": update_dict}
+            )
+            if result.modified_count > 0:
+                return True
+        
+        # Se não atualizou, tentar como string
         result = await self.collection.update_one(
-            {"_id": ObjectId(id)}, {"$set": update_dict}
+            {"_id": id}, {"$set": update_dict}
         )
         return result.modified_count > 0
 
     async def delete_by_id(self, id: str) -> bool:
         """Deletar documento por ID"""
-        if not ObjectId.is_valid(id):
-            return False
-        result = await self.collection.delete_one({"_id": ObjectId(id)})
+        # Tentar primeiro como ObjectId
+        if ObjectId.is_valid(id):
+            result = await self.collection.delete_one({"_id": ObjectId(id)})
+            if result.deleted_count > 0:
+                return True
+        
+        # Se não deletou, tentar como string
+        result = await self.collection.delete_one({"_id": id})
         return result.deleted_count > 0
 
     async def aggregate(self, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Executar pipeline de agregação"""
         cursor = self.collection.aggregate(pipeline)
         return await cursor.to_list(length=None)
+
+    # Aliases para compatibilidade
+    async def update(self, id: str, update_dict: Dict[str, Any]) -> bool:
+        """Alias para update_by_id"""
+        return await self.update_by_id(id, update_dict)
+
+    async def delete(self, id: str) -> bool:
+        """Alias para delete_by_id"""
+        return await self.delete_by_id(id)

@@ -1,6 +1,6 @@
 import traceback
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from config.logs import logger
 from infra.repositories.resultado_repository import ResultadoRepository
@@ -186,7 +186,7 @@ class ResultadoService:
             None
             
         Returns:
-            Dict[str, Any]: Médias das notas por área ou dict vazio
+            Dict[str, Any]: Médias das notas por área organizadas
             
         Exceptions:
             Exception: Erro durante cálculo das médias
@@ -194,17 +194,16 @@ class ResultadoService:
         try:
             logger.info("Calculando médias gerais das notas")
             medias = await self.resultado_repository.get_media_notas_por_area()
-            resultado = medias[0] if medias else {}
             
-            logger.info(f"Médias calculadas: {len(medias)} registros encontrados")
-            return resultado
+            logger.info("Médias calculadas com sucesso")
+            return medias
             
         except Exception as e:
             logger.error(f"Erro ao calcular médias gerais: {str(e)}")
             logger.error(traceback.format_exc())
             raise
 
-    async def obter_ranking_uf(self) -> List[Dict[str, Any]]:
+    async def obter_ranking_uf(self) -> Dict[str, Any]:
         """
         Obter ranking das UFs por média das notas.
         
@@ -212,7 +211,7 @@ class ResultadoService:
             None
             
         Returns:
-            List[Dict[str, Any]]: Lista com ranking das UFs
+            Dict[str, Any]: Ranking das UFs formatado
             
         Exceptions:
             Exception: Erro durante geração do ranking
@@ -221,7 +220,7 @@ class ResultadoService:
             logger.info("Gerando ranking das UFs por média das notas")
             ranking = await self.resultado_repository.get_media_por_uf()
             
-            logger.info(f"Ranking gerado com {len(ranking)} UFs")
+            logger.info(f"Ranking gerado com {ranking.get('total_ufs', 0)} UFs")
             return ranking
             
         except Exception as e:
@@ -230,33 +229,50 @@ class ResultadoService:
             raise
 
     async def obter_participantes_destaque(
-        self, nota_corte: float = 700.0
-    ) -> List[Dict[str, Any]]:
+        self, nota_corte: float = 700.0, skip: int = 0, limit: int = 10
+    ) -> Dict[str, Any]:
         """
         Obter participantes com notas de destaque.
         
         Args:
             nota_corte (float): Nota mínima para considerar destaque. Default: 700.0
+            skip (int): Número de registros a pular. Default: 0
+            limit (int): Limite de registros retornados. Default: 10
             
         Returns:
-            List[Dict[str, Any]]: Lista de participantes com notas acima da média
+            Dict[str, Any]: Dados paginados dos participantes com metadados
             
         Exceptions:
             Exception: Erro durante busca dos participantes
         """
         try:
-            logger.info(f"Buscando participantes com notas acima de {nota_corte}")
-            participantes = await self.resultado_repository.get_notas_acima_media(nota_corte)
+            logger.info(f"Buscando participantes com notas acima de {nota_corte} - skip: {skip}, limit: {limit}")
             
-            logger.info(f"Encontrados {len(participantes)} participantes em destaque")
-            return participantes
+            # Obter participantes com paginação
+            participantes = await self.resultado_repository.get_notas_acima_media(nota_corte, skip=skip, limit=limit)
+            
+            # Contar total de participantes que atendem ao critério
+            total = await self.resultado_repository.count_notas_acima_media(nota_corte)
+            
+            logger.info(f"Encontrados {total} participantes em destaque no total, retornando {len(participantes)} registros")
+            
+            return {
+                "items": participantes,
+                "total": total,
+                "skip": skip,
+                "limit": limit,
+                "has_more": skip + limit < total,
+                "current_page": (skip // limit) + 1,
+                "total_pages": (total + limit - 1) // limit,
+                "criterio": f"Nota >= {nota_corte}"
+            }
             
         except Exception as e:
             logger.error(f"Erro ao buscar participantes destaque: {str(e)}")
             logger.error(traceback.format_exc())
             raise
 
-    async def obter_distribuicao_redacao(self) -> List[Dict[str, Any]]:
+    async def obter_distribuicao_redacao(self) -> Dict[str, Any]:
         """
         Obter distribuição das notas de redação.
         
@@ -264,7 +280,7 @@ class ResultadoService:
             None
             
         Returns:
-            List[Dict[str, Any]]: Distribuição das notas de redação
+            Dict[str, Any]: Distribuição das notas de redação formatada
             
         Exceptions:
             Exception: Erro durante cálculo da distribuição
@@ -273,7 +289,7 @@ class ResultadoService:
             logger.info("Calculando distribuição das notas de redação")
             distribuicao = await self.resultado_repository.get_distribuicao_notas_redacao()
             
-            logger.info(f"Distribuição calculada com {len(distribuicao)} faixas")
+            logger.info(f"Distribuição calculada com {distribuicao.get('resumo_geral', {}).get('total_participantes', 0)} participantes")
             return distribuicao
             
         except Exception as e:
@@ -316,7 +332,7 @@ class ResultadoService:
                     "inicio": data_inicio.isoformat() if data_inicio else None,
                     "fim": data_fim.isoformat() if data_fim else None,
                 },
-                "medias": medias[0] if medias else {},
+                "estatisticas": medias if medias else {},
             }
             
             logger.info(f"Estatísticas calculadas: {total} resultados no período")

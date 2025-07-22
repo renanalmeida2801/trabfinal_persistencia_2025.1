@@ -1,13 +1,21 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from infra.repositories.resultado_repository import ResultadoRepository
 from infra.settings.database import get_database
+from schemas.resultado_schemas import (
+    DistribuicaoRedacaoResponse,
+    EstatisticasPeriodoResponse,
+    MediasGeraisResponse,
+    ParticipantesDestaqueResponse,
+    RankingUFResponse,
+    ResultadoCreate,
+    ResultadoPaginadoResponse,
+    ResultadoSimples,
+)
 from services.resultado_service import ResultadoService
-from schemas.resultado_schemas import ResultadoCreate
-
 
 router = APIRouter(prefix="/resultados", tags=["Resultados"])
 
@@ -19,7 +27,7 @@ async def get_resultado_service():
     return ResultadoService(resultado_repo)
 
 
-@router.post("/", response_model=Dict[str, Any])
+@router.post("/", response_model=ResultadoSimples)
 async def criar_resultado(
     resultado: ResultadoCreate,
     service: ResultadoService = Depends(get_resultado_service),
@@ -31,7 +39,7 @@ async def criar_resultado(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{resultado_id}", response_model=Dict[str, Any])
+@router.get("/{resultado_id}", response_model=ResultadoSimples)
 async def obter_resultado(
     resultado_id: str, service: ResultadoService = Depends(get_resultado_service)
 ):
@@ -42,7 +50,7 @@ async def obter_resultado(
     return resultado
 
 
-@router.get("/participante/{participante_inscricao}", response_model=Dict[str, Any])
+@router.get("/participante/{participante_inscricao}", response_model=ResultadoSimples)
 async def obter_resultado_por_participante(
     participante_inscricao: str,
     service: ResultadoService = Depends(get_resultado_service),
@@ -54,7 +62,7 @@ async def obter_resultado_por_participante(
     return resultado
 
 
-@router.get("/", response_model=Dict[str, Any])
+@router.get("/", response_model=ResultadoPaginadoResponse)
 async def listar_resultados(
     skip: int = Query(0, ge=0, description="Número de registros a pular"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
@@ -75,7 +83,7 @@ async def listar_resultados(
     )
 
 
-@router.get("/estatisticas/medias-gerais", response_model=Dict[str, Any])
+@router.get("/estatisticas/medias-gerais", response_model=MediasGeraisResponse)
 async def obter_medias_gerais(
     service: ResultadoService = Depends(get_resultado_service),
 ):
@@ -83,22 +91,28 @@ async def obter_medias_gerais(
     return await service.obter_media_notas_gerais()
 
 
-@router.get("/estatisticas/ranking-uf", response_model=List[Dict[str, Any]])
+@router.get("/estatisticas/ranking-uf", response_model=RankingUFResponse)
 async def obter_ranking_uf(service: ResultadoService = Depends(get_resultado_service)):
     """Obter ranking das UFs por média das notas"""
     return await service.obter_ranking_uf()
 
 
-@router.get("/estatisticas/participantes-destaque", response_model=List[Dict[str, Any]])
+@router.get(
+    "/estatisticas/participantes-destaque", response_model=ParticipantesDestaqueResponse
+)
 async def obter_participantes_destaque(
     nota_corte: float = Query(700.0, ge=0, le=1000, description="Nota de corte"),
+    skip: int = Query(0, ge=0, description="Número de registros a pular"),
+    limit: int = Query(10, ge=1, le=100, description="Limite de registros por página"),
     service: ResultadoService = Depends(get_resultado_service),
 ):
     """Obter participantes com notas de destaque"""
-    return await service.obter_participantes_destaque(nota_corte)
+    return await service.obter_participantes_destaque(nota_corte, skip, limit)
 
 
-@router.get("/estatisticas/distribuicao-redacao", response_model=List[Dict[str, Any]])
+@router.get(
+    "/estatisticas/distribuicao-redacao", response_model=DistribuicaoRedacaoResponse
+)
 async def obter_distribuicao_redacao(
     service: ResultadoService = Depends(get_resultado_service),
 ):
@@ -106,7 +120,7 @@ async def obter_distribuicao_redacao(
     return await service.obter_distribuicao_redacao()
 
 
-@router.get("/estatisticas/periodo", response_model=Dict[str, Any])
+@router.get("/estatisticas/periodo", response_model=EstatisticasPeriodoResponse)
 async def obter_estatisticas_periodo(
     data_inicio: Optional[datetime] = Query(
         None, description="Data de início (ISO format)"

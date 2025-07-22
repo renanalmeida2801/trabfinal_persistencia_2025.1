@@ -1,11 +1,18 @@
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from config.logs import logger
 from infra.repositories.municipio_repository import MunicipioRepository
 from infra.settings.database import get_database
-from schemas.municipio_schemas import MunicipioCreate, MunicipioUpdate
+from schemas.municipio_schemas import (
+    MunicipioCreate, 
+    MunicipioUpdate,
+    MunicipioSimples,
+    MunicipioPaginadoResponse,
+    MunicipioOperationResponse,
+    EstatisticasRegiaoResponse
+)
 from services.municipio_service import MunicipioService
 
 router = APIRouter(prefix="/municipios", tags=["Municípios"])
@@ -18,7 +25,7 @@ async def get_municipio_service():
     return MunicipioService(municipio_repo)
 
 
-@router.post("/", response_model=Dict[str, Any])
+@router.post("/", response_model=MunicipioSimples)
 async def criar_municipio(
     municipio: MunicipioCreate,
     service: MunicipioService = Depends(get_municipio_service),
@@ -34,7 +41,7 @@ async def criar_municipio(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{municipio_id}", response_model=Dict[str, Any])
+@router.get("/{municipio_id}", response_model=MunicipioSimples)
 async def obter_municipio(
     municipio_id: str, service: MunicipioService = Depends(get_municipio_service)
 ):
@@ -48,7 +55,7 @@ async def obter_municipio(
     return municipio
 
 
-@router.get("/codigo/{codigo}", response_model=Dict[str, Any])
+@router.get("/codigo/{codigo}", response_model=MunicipioSimples)
 async def obter_municipio_por_codigo(
     codigo: int, service: MunicipioService = Depends(get_municipio_service)
 ):
@@ -62,7 +69,7 @@ async def obter_municipio_por_codigo(
     return municipio
 
 
-@router.get("/", response_model=Dict[str, Any])
+@router.get("/", response_model=MunicipioPaginadoResponse)
 async def listar_municipios(
     skip: int = Query(0, ge=0, description="Número de registros a pular"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
@@ -85,7 +92,7 @@ async def listar_municipios(
     return resultado
 
 
-@router.put("/{municipio_id}", response_model=Dict[str, bool])
+@router.put("/{municipio_id}", response_model=MunicipioOperationResponse)
 async def atualizar_municipio(
     municipio_id: str,
     municipio_update: MunicipioUpdate,
@@ -102,10 +109,10 @@ async def atualizar_municipio(
     if not updated:
         raise HTTPException(status_code=404, detail="Município não encontrado")
 
-    return {"success": True}
+    return {"success": True, "message": "Município atualizado com sucesso", "municipio_id": municipio_id}
 
 
-@router.delete("/{municipio_id}", response_model=Dict[str, bool])
+@router.delete("/{municipio_id}", response_model=MunicipioOperationResponse)
 async def deletar_municipio(
     municipio_id: str, service: MunicipioService = Depends(get_municipio_service)
 ):
@@ -114,10 +121,10 @@ async def deletar_municipio(
     if not deleted:
         raise HTTPException(status_code=404, detail="Município não encontrado")
 
-    return {"success": True}
+    return {"success": True, "message": "Município deletado com sucesso", "municipio_id": municipio_id}
 
 
-@router.get("/estatisticas/regiao", response_model=List[Dict[str, Any]])
+@router.get("/estatisticas/regiao", response_model=EstatisticasRegiaoResponse)
 async def obter_estatisticas_regiao(
     service: MunicipioService = Depends(get_municipio_service),
 ):

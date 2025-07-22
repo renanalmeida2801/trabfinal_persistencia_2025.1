@@ -212,12 +212,12 @@ class ParticipanteService:
             logger.error(traceback.format_exc())
             raise
 
-    async def obter_participantes_por_uf(self) -> List[Dict[str, Any]]:
+    async def obter_participantes_por_uf(self, uf_sigla: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Obter contagem de participantes por UF.
         
         Args:
-            None
+            uf_sigla (Optional[str]): Sigla da UF para filtrar (opcional)
             
         Returns:
             List[Dict[str, Any]]: Lista com contagem de participantes por UF
@@ -226,10 +226,14 @@ class ParticipanteService:
             Exception: Erro durante contagem por UF
         """
         try:
-            logger.info("Calculando contagem de participantes por UF")
-            contagem = await self.participante_repository.get_participantes_por_uf()
+            if uf_sigla:
+                logger.info(f"Calculando contagem de participantes para UF: {uf_sigla}")
+            else:
+                logger.info("Calculando contagem de participantes por todas as UFs")
+                
+            contagem = await self.participante_repository.get_participantes_por_uf(uf_sigla)
             
-            logger.info(f"Contagem calculada para {len(contagem)} UFs")
+            logger.info(f"Contagem calculada para {len(contagem)} UF(s)")
             return contagem
             
         except Exception as e:

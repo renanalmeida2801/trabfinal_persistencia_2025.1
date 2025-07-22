@@ -1,11 +1,17 @@
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from config.logs import logger
 from infra.repositories.escola_repository import EscolaRepository
 from infra.settings.database import get_database
-from schemas.escola_schemas import EscolaCreate
+from schemas.escola_schemas import (
+    EscolaCreate,
+    EscolaSimples,
+    EscolaPaginadaResponse,
+    EscolasPorDependenciaResponse,
+    RankingEscolasResponse
+)
 from services.escola_service import EscolaService
 
 router = APIRouter(prefix="/escolas", tags=["Escolas"])
@@ -18,7 +24,7 @@ async def get_escola_service():
     return EscolaService(escola_repo)
 
 
-@router.post("/", response_model=Dict[str, Any])
+@router.post("/", response_model=EscolaSimples)
 async def criar_escola(
     escola: EscolaCreate, service: EscolaService = Depends(get_escola_service)
 ):
@@ -34,7 +40,7 @@ async def criar_escola(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{escola_id}", response_model=Dict[str, Any])
+@router.get("/{escola_id}", response_model=EscolaSimples)
 async def obter_escola(
     escola_id: str, service: EscolaService = Depends(get_escola_service)
 ):
@@ -48,7 +54,7 @@ async def obter_escola(
     return escola
 
 
-@router.get("/codigo/{codigo}", response_model=Dict[str, Any])
+@router.get("/codigo/{codigo}", response_model=EscolaSimples)
 async def obter_escola_por_codigo(
     codigo: int, service: EscolaService = Depends(get_escola_service)
 ):
@@ -62,7 +68,7 @@ async def obter_escola_por_codigo(
     return escola
 
 
-@router.get("/", response_model=Dict[str, Any])
+@router.get("/", response_model=EscolaPaginadaResponse)
 async def listar_escolas(
     skip: int = Query(0, ge=0, description="Número de registros a pular"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
@@ -89,15 +95,18 @@ async def listar_escolas(
     )
 
 
-@router.get("/estatisticas/por-dependencia", response_model=List[Dict[str, Any]])
+@router.get("/estatisticas/por-dependencia", response_model=EscolasPorDependenciaResponse)
 async def obter_escolas_por_dependencia(
+    uf_sigla: Optional[str] = Query(
+        None, description="Filtrar por UF específica (opcional)"
+    ),
     service: EscolaService = Depends(get_escola_service),
 ):
     """Obter distribuição de escolas por dependência administrativa"""
-    return await service.obter_escolas_por_dependencia()
+    return await service.obter_escolas_por_dependencia(uf_sigla)
 
 
-@router.get("/estatisticas/ranking-desempenho", response_model=List[Dict[str, Any]])
+@router.get("/estatisticas/ranking-desempenho", response_model=RankingEscolasResponse)
 async def obter_ranking_escolas_por_desempenho(
     limit: int = Query(50, ge=1, le=100, description="Número de escolas no ranking"),
     service: EscolaService = Depends(get_escola_service),

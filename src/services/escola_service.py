@@ -200,12 +200,12 @@ class EscolaService:
             logger.error(traceback.format_exc())
             raise
 
-    async def obter_escolas_por_dependencia(self) -> List[Dict[str, Any]]:
+    async def obter_escolas_por_dependencia(self, uf_sigla: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Obter distribuição de escolas por dependência administrativa.
 
         Args:
-            None
+            uf_sigla (Optional[str]): Sigla da UF para filtrar (opcional)
 
         Returns:
             List[Dict[str, Any]]: Distribuição de escolas por dependência administrativa
@@ -214,14 +214,14 @@ class EscolaService:
             Exception: Erro durante cálculo da distribuição
         """
         try:
-            logger.info(
-                "Calculando distribuição de escolas por dependência administrativa"
-            )
-            distribuicao = await self.escola_repository.get_escolas_por_dependencia()
+            if uf_sigla:
+                logger.info(f"Calculando distribuição de escolas por dependência administrativa para UF: {uf_sigla}")
+            else:
+                logger.info("Calculando distribuição de escolas por dependência administrativa")
+                
+            distribuicao = await self.escola_repository.get_escolas_por_dependencia(uf_sigla)
 
-            logger.info(
-                f"Distribuição calculada com {len(distribuicao)} tipos de dependência"
-            )
+            logger.info(f"Distribuição calculada com {len(distribuicao)} tipos de dependência")
             return distribuicao
 
         except Exception as e:

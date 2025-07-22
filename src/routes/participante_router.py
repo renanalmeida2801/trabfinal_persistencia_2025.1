@@ -1,10 +1,17 @@
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from infra.repositories.participante_repository import ParticipanteRepository
 from infra.settings.database import get_database
 from services.participante_service import ParticipanteService
+from schemas.participante_schemas import (
+    ParticipanteSimples,
+    ParticipantePaginadoResponse,
+    EstatisticasDemograficasResponse,
+    ParticipantesPorUFResponse,
+    DistribuicaoIdadeResponse
+)
 
 router = APIRouter(prefix="/participantes", tags=["Participantes"])
 
@@ -16,7 +23,7 @@ async def get_participante_service():
     return ParticipanteService(participante_repo)
 
 
-@router.get("/{participante_id}", response_model=Dict[str, Any])
+@router.get("/{participante_id}", response_model=ParticipanteSimples)
 async def obter_participante(
     participante_id: str,
     service: ParticipanteService = Depends(get_participante_service),
@@ -28,7 +35,7 @@ async def obter_participante(
     return participante
 
 
-@router.get("/inscricao/{nu_inscricao}", response_model=Dict[str, Any])
+@router.get("/inscricao/{nu_inscricao}", response_model=ParticipanteSimples)
 async def obter_participante_por_inscricao(
     nu_inscricao: str,
     service: ParticipanteService = Depends(get_participante_service),
@@ -40,7 +47,7 @@ async def obter_participante_por_inscricao(
     return participante
 
 
-@router.get("/", response_model=Dict[str, Any])
+@router.get("/", response_model=ParticipantePaginadoResponse)
 async def listar_participantes(
     skip: int = Query(0, ge=0, description="Número de registros a pular"),
     limit: int = Query(100, ge=1, le=1000, description="Limite de registros"),
@@ -73,7 +80,7 @@ async def listar_participantes(
     )
 
 
-@router.get("/estatisticas/demograficas", response_model=Dict[str, Any])
+@router.get("/estatisticas/demograficas", response_model=EstatisticasDemograficasResponse)
 async def obter_estatisticas_demograficas(
     service: ParticipanteService = Depends(get_participante_service),
 ):
@@ -81,15 +88,16 @@ async def obter_estatisticas_demograficas(
     return await service.obter_estatisticas_demograficas()
 
 
-@router.get("/estatisticas/por-uf", response_model=List[Dict[str, Any]])
+@router.get("/estatisticas/por-uf", response_model=ParticipantesPorUFResponse)
 async def obter_participantes_por_uf(
+    uf_sigla: Optional[str] = Query(None, description="Filtrar por UF específica (opcional)"),
     service: ParticipanteService = Depends(get_participante_service),
 ):
     """Obter contagem de participantes por UF"""
-    return await service.obter_participantes_por_uf()
+    return await service.obter_participantes_por_uf(uf_sigla)
 
 
-@router.get("/estatisticas/distribuicao-idade", response_model=List[Dict[str, Any]])
+@router.get("/estatisticas/distribuicao-idade", response_model=DistribuicaoIdadeResponse)
 async def obter_distribuicao_idade(
     service: ParticipanteService = Depends(get_participante_service),
 ):
