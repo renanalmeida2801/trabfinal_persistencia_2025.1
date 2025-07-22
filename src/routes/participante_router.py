@@ -4,14 +4,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from infra.repositories.participante_repository import ParticipanteRepository
 from infra.settings.database import get_database
-from services.participante_service import ParticipanteService
 from schemas.participante_schemas import (
-    ParticipanteSimples,
-    ParticipantePaginadoResponse,
+    DistribuicaoIdadeResponse,
     EstatisticasDemograficasResponse,
+    ParticipanteCreate,
+    ParticipanteOperationResponse,
+    ParticipantePaginadoResponse,
+    ParticipanteSimples,
     ParticipantesPorUFResponse,
-    DistribuicaoIdadeResponse
+    ParticipanteUpdate,
 )
+from services.participante_service import ParticipanteService
 
 router = APIRouter(prefix="/participantes", tags=["Participantes"])
 
@@ -80,7 +83,9 @@ async def listar_participantes(
     )
 
 
-@router.get("/estatisticas/demograficas", response_model=EstatisticasDemograficasResponse)
+@router.get(
+    "/estatisticas/demograficas", response_model=EstatisticasDemograficasResponse
+)
 async def obter_estatisticas_demograficas(
     service: ParticipanteService = Depends(get_participante_service),
 ):
@@ -90,16 +95,74 @@ async def obter_estatisticas_demograficas(
 
 @router.get("/estatisticas/por-uf", response_model=ParticipantesPorUFResponse)
 async def obter_participantes_por_uf(
-    uf_sigla: Optional[str] = Query(None, description="Filtrar por UF específica (opcional)"),
+    uf_sigla: Optional[str] = Query(
+        None, description="Filtrar por UF específica (opcional)"
+    ),
     service: ParticipanteService = Depends(get_participante_service),
 ):
     """Obter contagem de participantes por UF"""
     return await service.obter_participantes_por_uf(uf_sigla)
 
 
-@router.get("/estatisticas/distribuicao-idade", response_model=DistribuicaoIdadeResponse)
+@router.get(
+    "/estatisticas/distribuicao-idade", response_model=DistribuicaoIdadeResponse
+)
 async def obter_distribuicao_idade(
     service: ParticipanteService = Depends(get_participante_service),
 ):
     """Obter distribuição de idades dos participantes"""
     return await service.obter_distribuicao_idade()
+
+
+@router.post("/", response_model=ParticipanteSimples)
+async def criar_participante(
+    participante: ParticipanteCreate,
+    service: ParticipanteService = Depends(get_participante_service),
+):
+    """Criar um novo participante"""
+    try:
+        created_participante = await service.criar_participante(participante.dict())
+        return created_participante
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/{participante_id}", response_model=ParticipanteOperationResponse)
+async def atualizar_participante(
+    participante_id: str,
+    participante_update: ParticipanteUpdate,
+    service: ParticipanteService = Depends(get_participante_service),
+):
+    """Atualizar participante"""
+    # Remove campos None
+    update_data = {k: v for k, v in participante_update.dict().items() if v is not None}
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Nenhum dado para atualizar")
+
+    updated = await service.atualizar_participante(participante_id, update_data)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Participante não encontrado")
+
+    return {
+        "success": True,
+        "message": "Participante atualizado com sucesso",
+        "participante_id": participante_id,
+    }
+
+
+@router.delete("/{participante_id}", response_model=ParticipanteOperationResponse)
+async def deletar_participante(
+    participante_id: str,
+    service: ParticipanteService = Depends(get_participante_service),
+):
+    """Deletar participante"""
+    deleted = await service.deletar_participante(participante_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Participante não encontrado")
+
+    return {
+        "success": True,
+        "message": "Participante deletado com sucesso",
+        "participante_id": participante_id,
+    }
