@@ -138,7 +138,13 @@ class EscolaService:
             Exception: Erro durante listagem das escolas
         """
         try:
-            filtros_str = f"skip={skip}, limit={limit}, uf={uf}, municipio={municipio}, dependencia_administrativa={dependencia_administrativa}, localizacao={localizacao}, situacao_funcionamento={situacao_funcionamento}"
+            filtros_str = (
+                f"skip={skip}, limit={limit}, "
+                f"uf={uf}, municipio={municipio}, "
+                f"dependencia_administrativa={dependencia_administrativa}, "
+                f"localizacao={localizacao}, "
+                f"situacao_funcionamento={situacao_funcionamento}"
+            )
             logger.info(f"Listando escolas - {filtros_str}")
 
             filter_dict = {}
