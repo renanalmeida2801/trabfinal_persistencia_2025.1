@@ -2,6 +2,8 @@
 
 Sistema de API RESTful para exploração e manipulação de dados do ENEM (Exame Nacional do Ensino Médio) utilizando FastAPI e MongoDB.
 
+> **📌 Nota da Versão 1.0.0**: O carregamento automático de dados foi substituído por um endpoint administrativo (`/admin/load-data`) para melhor controle e performance.
+
 ## 📋 Descrição do Projeto
 
 Este projeto foi desenvolvido como Trabalho Prático Final da disciplina de Persistência de Dados, tendo como objetivo integrar conhecimentos de:
@@ -38,6 +40,14 @@ HTTP Request → Router (Controller) → Service → Repository → MongoDB
                  ↓
 HTTP Response ← Schema ← Business Logic ← Data Access ← Database
 ```
+
+### Routers Implementados
+
+- **`admin_router.py`**: Endpoints administrativos (carregamento de dados)
+- **`municipio_router.py`**: CRUD e consultas de municípios
+- **`escola_router.py`**: CRUD e consultas de escolas  
+- **`participante_router.py`**: CRUD e consultas de participantes
+- **`resultado_router.py`**: CRUD e consultas de resultados
 
 ### Tratamento de Erros Robusto
 
@@ -107,6 +117,7 @@ src/
 │   ├── questionario.py
 │   └── resultado.py
 ├── routes/                    # Definição das rotas da API
+│   ├── admin_router.py       # Rotas administrativas (carregamento de dados)
 │   ├── escola_router.py      # Rotas para endpoints de escolas
 │   ├── municipio_router.py   # Rotas para endpoints de municípios  
 │   ├── participante_router.py # Rotas para endpoints de participantes
@@ -174,30 +185,40 @@ cp .env.example .env
 ### 4. Carregar dados no MongoDB
 
 ```bash
-# Método 1: Carregamento automático via API (recomendado)
-# Definir variável de ambiente para carregar dados na inicialização
-export RELOAD_DATA=true
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Método 1: Carregamento via API (recomendado)
+# Iniciar a aplicação
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
-# Método 2: Executar script manualmente
+# Em outro terminal, fazer requisição para carregar dados
+curl -X POST http://localhost:8000/admin/load-data
+
+# Método 2: Script manual (alternativo)
 cd src
 python scripts/load_data.py
+
+# Método 3: Carregamento automático via variável de ambiente (DEPRECIADO)
+# Esta funcionalidade foi removida para melhor controle
+# export RELOAD_DATA=true
 ```
 
 ### 5. Executar a aplicação
 
 ```bash
-# Método 1: Iniciar com carregamento automático de dados
-export RELOAD_DATA=true
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
-
-# Método 2: Iniciar sem recarregar dados (padrão)
+# Método 1: Iniciar aplicação (padrão)
 cd src
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# Método 3: Usar Python diretamente
+# Método 2: Usar Python diretamente
 cd src
 python main.py
+
+# Método 3: Executar do diretório raiz
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# A aplicação estará disponível em:
+# - API: http://localhost:8000
+# - Documentação: http://localhost:8000/docs
+# - Health Check: http://localhost:8000/health
 ```
 
 ## 🔗 Endpoints da API
@@ -206,7 +227,19 @@ python main.py
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+### Tags da API
+- **Administração**: Endpoints para gerenciamento de dados e sistema
+- **Municípios**: Operações relacionadas a municípios brasileiros
+- **Escolas**: Gestão de escolas participantes do ENEM
+- **Participantes**: Dados de candidatos do ENEM
+- **Resultados**: Notas e desempenho dos participantes
+- **Root**: Endpoints básicos da aplicação
+- **Health**: Monitoramento de saúde da API
+
 ### Principais Endpoints
+
+#### Administração
+- `POST /admin/load-data` - Carregar dados iniciais do CSV para MongoDB
 
 #### Municípios
 - `GET /municipios/` - Listar municípios com paginação e filtros
@@ -253,6 +286,46 @@ python main.py
 
 ## 🔍 Funcionalidades Avançadas
 
+### Carregamento de Dados via API
+
+O sistema possui um endpoint administrativo para carregamento de dados que substitui o método automático na inicialização:
+
+#### Endpoint de Carregamento
+```bash
+POST /admin/load-data
+```
+
+#### Resposta de Sucesso
+```json
+{
+  "status": "success",
+  "message": "Dados carregados com sucesso!",
+  "files_processed": [
+    "data/amostra_participantes.csv",
+    "data/amostra_resultados.csv"
+  ]
+}
+```
+
+#### Resposta de Erro
+```json
+{
+  "status": "error",
+  "message": "Arquivos CSV não encontrados em 'data/'",
+  "expected_files": [
+    "data/amostra_participantes.csv",
+    "data/amostra_resultados.csv"
+  ]
+}
+```
+
+#### Vantagens do Carregamento via API:
+- ✅ **Controle manual**: Carregamento apenas quando solicitado
+- ✅ **Inicialização mais rápida**: API inicia sem esperar o carregamento
+- ✅ **Feedback estruturado**: Resposta JSON com status detalhado
+- ✅ **Flexibilidade**: Pode ser executado múltiplas vezes se necessário
+- ✅ **Monitoramento**: Logs detalhados do processo de carregamento
+
 ### Paginação
 Todos os endpoints de listagem suportam paginação:
 ```
@@ -278,6 +351,16 @@ GET /resultados/estatisticas/periodo?data_inicio=2024-01-01&data_fim=2024-12-31
 - Estatísticas socioeconômicas
 
 ## 🎯 Exemplos de Uso
+
+### Carregar dados iniciais
+```bash
+curl -X POST "http://localhost:8000/admin/load-data"
+```
+
+### Verificar saúde da API
+```bash
+curl -X GET "http://localhost:8000/health"
+```
 
 ### Obter ranking das UFs por média das notas
 ```bash
@@ -358,6 +441,31 @@ O projeto utiliza uma estrutura organizada de schemas separados por domínio:
 - **Update**: Schemas para atualização de recursos existentes
 - **Response**: Schemas para resposta da API (saída)
 
+## 🔧 Migração: Carregamento Automático → API
+
+### Mudança de Arquitetura (v1.0.0)
+
+**Antes (Carregamento Automático):**
+- Dados carregados na inicialização da aplicação
+- Dependia da variável de ambiente `RELOAD_DATA=true`
+- Aumentava tempo de startup da aplicação
+- Difícil controle e monitoramento do processo
+
+**Depois (Carregamento via API):**
+- Carregamento manual via endpoint `/admin/load-data`
+- Inicialização mais rápida da aplicação
+- Controle total sobre quando carregar dados
+- Resposta estruturada com status e detalhes
+- Logs específicos do processo de carregamento
+
+### Benefícios da Nova Arquitetura
+
+1. **Performance**: Aplicação inicia imediatamente
+2. **Flexibilidade**: Recarregar dados quando necessário
+3. **Observabilidade**: Feedback detalhado do processo
+4. **Separação de Responsabilidades**: Admin separado da aplicação principal
+5. **Desenvolvimento**: Facilita testes e desenvolvimento local
+
 ## 🔧 Services Implementados
 
 ### **ResultadoService** (13 métodos)
@@ -432,7 +540,26 @@ O projeto utiliza uma estrutura organizada de schemas separados por domínio:
 2025-01-20 10:30:15 - INFO - enem_api - Criando participante: 190123456789
 2025-01-20 10:30:15 - INFO - enem_api - Participante criado com sucesso: 190123456789
 2025-01-20 10:30:20 - ERROR - enem_api - Erro ao buscar escola por código 999999: Escola não encontrada
+2025-01-20 10:30:25 - INFO - enem_api - Iniciando carregamento de dados...
+2025-01-20 10:30:45 - INFO - enem_api - Dados carregados com sucesso!
 2025-01-20 10:30:20 - ERROR - enem_api - Traceback (most recent call last):...
+```
+
+### Logs do Endpoint Administrativo
+
+O endpoint `/admin/load-data` gera logs específicos para monitoramento:
+
+```
+2025-07-21 14:15:00 - INFO - enem_api - Iniciando carregamento de dados...
+2025-07-21 14:15:05 - INFO - enem_api - Processando participantes...  
+2025-07-21 14:15:10 - INFO - enem_api - Processando resultados...
+2025-07-21 14:15:15 - INFO - enem_api - Dados carregados com sucesso!
+```
+
+**Ou em caso de erro:**
+```
+2025-07-21 14:15:00 - WARNING - enem_api - Arquivos CSV não encontrados em 'data/'. Carregamento cancelado.
+2025-07-21 14:15:01 - ERROR - enem_api - Erro ao carregar dados: FileNotFoundError: Arquivo não encontrado
 ```
 
 ## 📈 Escalabilidade e Performance
@@ -448,17 +575,11 @@ O projeto utiliza uma estrutura organizada de schemas separados por domínio:
 
 ### Carregamento Inteligente de Dados
 
-- **Carregamento Automático**: Via variável `RELOAD_DATA=true`
+- **Carregamento via API**: Endpoint `/admin/load-data` para controle manual
 - **Verificação de Integridade**: Validação de dados antes da inserção
 - **Enriquecimento de Dados**: Relacionamentos e campos calculados
 - **Tratamento de Duplicatas**: Upsert automático baseado em chaves únicas
-
-### Métricas de Performance
-
-- **~5000 participantes** processados em menos de 30 segundos
-- **~1700 escolas** com relacionamentos em menos de 10 segundos  
-- **~1500 municípios** enriquecidos com dados regionais
-- **Agregações complexas** otimizadas com pipeline do MongoDB
+- **Feedback em Tempo Real**: Respostas JSON estruturadas com status detalhado
 
 ## 🤝 Contribuição
 
