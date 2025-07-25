@@ -172,6 +172,8 @@ class EscolaService:
                 "items": escolas,
                 "total": total,
                 "skip": skip,
+                "current_page": (skip // limit) + 1 if limit > 0 else 1,
+                "total_pages": (total + limit - 1) // limit if limit > 0 else 1,
                 "limit": limit,
                 "has_more": skip + limit < total,
             }
