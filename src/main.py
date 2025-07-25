@@ -12,6 +12,7 @@ from routes import (
     municipio_router,
     participante_router,
     resultado_router,
+    areas_router,
 )
 
 
@@ -69,6 +70,7 @@ app.include_router(municipio_router.router)
 app.include_router(escola_router.router)
 app.include_router(participante_router.router)
 app.include_router(resultado_router.router)
+app.include_router(areas_router.router)
 
 
 @app.get("/", tags=["Root"])
